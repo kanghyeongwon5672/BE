@@ -5,31 +5,34 @@ import com.tjoeun.boxmon.exception.InvalidPasswordException;
 import com.tjoeun.boxmon.exception.InvalidTokenException;
 import com.tjoeun.boxmon.exception.TokenTypeMismatchException;
 import com.tjoeun.boxmon.exception.UserNotFoundException;
+import com.tjoeun.boxmon.feature.user.domain.Driver;
+import com.tjoeun.boxmon.feature.user.domain.Shipper;
 import com.tjoeun.boxmon.feature.user.domain.User;
+import com.tjoeun.boxmon.feature.user.domain.UserType;
 import com.tjoeun.boxmon.feature.user.dto.LoginRequest;
 import com.tjoeun.boxmon.feature.user.dto.LoginResponse;
 import com.tjoeun.boxmon.feature.user.dto.SignupRequest;
 import com.tjoeun.boxmon.feature.user.dto.TokenRefreshRequest;
 import com.tjoeun.boxmon.feature.user.dto.TokenRefreshResponse;
+import com.tjoeun.boxmon.feature.user.repository.DriverRepository;
+import com.tjoeun.boxmon.feature.user.repository.ShipperRepository;
 import com.tjoeun.boxmon.feature.user.repository.UserRepository;
 
 import com.tjoeun.boxmon.security.jwt.JwtProvider;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
-
     private final UserRepository userRepository;
+    private final ShipperRepository shipperRepository;
+    private final DriverRepository driverRepository;
+
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
-
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtProvider jwtProvider) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtProvider = jwtProvider;
-    }
 
     //회원가입
     public void signup(SignupRequest request) {
@@ -46,6 +49,17 @@ public class UserService {
                 request.getUserType()
         );
         userRepository.save(user);
+
+        userRepository.save(user); // 여기서 user_id 생성됨
+
+        // 🔥 여기 추가
+        if (request.getUserType() == UserType.SHIPPER) {
+            Shipper shipper = new Shipper(user); // user_id FK
+            shipperRepository.save(shipper);
+        } else if (request.getUserType() == UserType.DRIVER) {
+            Driver driver = new Driver(user);
+            driverRepository.save(driver);
+        }
     }
 
 
